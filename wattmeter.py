@@ -7,27 +7,27 @@ import time
 def csv_header():
     return 'volt,ampere,watt,volt-ampere,power-factor'
 
-def read_watts():
-    com = serial.Serial(
-        port='/dev/ttyACM0',
-        baudrate=115200
-    )
+def to_csv(dict):
+    return '{V:.2f},{A:.2f},{W:.2f},{VA:.2f},{PF:.2f}'.format(**dict)
 
+def read(port, baudrate):
+    com = serial.Serial(port, baudrate)
     com.flush()
 
+    dict = []
     csvline = ''
     while csvline == '':
         try:
-            line = json.loads(com.readline())
-            csvline = '{V:.2f},{A:.2f},{W:.2f},{VA:.2f},{PF:.2f}'.format(**line)
+            dict = json.loads(com.readline())
+            csvline = to_csv(dict)
         except ValueError:
             pass
         except KeyError:
             pass
 
     com.close()
-    return csvline
+    return dict
 
 if __name__ == '__main__':
     print csv_header()
-    print read_watts()
+    print to_csv(read('/dev/ttyACM0', 115200))

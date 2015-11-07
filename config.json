@@ -1,0 +1,5 @@
+{
+    "logfile": "/ramdisk/soremon.csv",
+    "serialport": "/dev/ttyACM0",
+    "baudrate": 115200
+}
