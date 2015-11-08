@@ -1,0 +1,145 @@
+#! /bin/sh
+
+# find config file
+script_path="$0"
+if [ -n "`readlink -f "$script_path"`" ]; then
+    script_path="`readlink -f "$script_path"`"
+fi
+cd `dirname "$script_path"`
+cd ../
+configfile="`pwd`/config.json"
+
+# read config file
+logfile=`jq -r ".logfile" "$configfile"`
+
+# munin autoconf
+if [ "$1" = "autoconf" ]; then
+    if [ -e $logfile ]; then
+        echo yes
+        exit 0
+    else
+        echo no
+        exit 1
+    fi
+fi
+
+# munin config
+if [ "$1" = "config" ]; then
+    echo multigraph temperature
+    echo graph_title BME280 temperature [degrees celcius]
+    echo graph_args --base 1000 --lower-limit -20 --upper-limit 70
+    echo graph_category sensors
+    echo graph_period minute
+
+    echo bme280.label BME280
+    echo bme280.info BME280 temperature
+
+    echo multigraph humidity
+    echo graph_title BME280 humidity [%]
+    echo graph_args --base 1000 --lower-limit 0 --upper-limit 100
+    echo graph_category sensors
+    echo graph_period minute
+
+    echo bme280.label BME280
+    echo bme280.info BME280 humidity
+
+    echo multigraph pressure
+    echo graph_title BME280 atmospheric pressure [hPa]
+    echo graph_args --base 1000 --lower-limit 900 --upper-limit 1050
+    echo graph_category sensors
+    echo graph_period minute
+
+    echo bme280.label BME280
+    echo bme280.info BME280 atmospheric pressure
+
+    echo multigraph volt
+    echo graph_title Wattmeter volt [V]
+    echo graph_args --base 1000 --lower-limit 90 --upper-limit 110
+    echo graph_category sensors
+    echo graph_period minute
+
+    echo wattmeter.label wattmeter
+    echo wattmeter.info volt
+
+    echo multigraph ampere
+    echo graph_title Wattmeter ampere [A]
+    echo graph_args --base 1000 --lower-limit 0 --upper-limit 15
+    echo graph_category sensors
+    echo graph_period minute
+
+    echo wattmeter.label wattmeter
+    echo wattmeter.info ampere
+
+    echo multigraph watt
+    echo graph_title Wattmeter watt [W]
+    echo graph_args --base 1000 --lower-limit 0 --upper-limit 1500
+    echo graph_category sensors
+    echo graph_period minute
+
+    echo wattmeter.label wattmeter
+    echo wattmeter.info watt
+
+    echo multigraph voltampere
+    echo graph_title Wattmeter volt-ampere [VA]
+    echo graph_args --base 1000 --lower-limit 0 --upper-limit 1500
+    echo graph_category sensors
+    echo graph_period minute
+
+    echo wattmeter.label wattmeter
+    echo wattmeter.info volt-ampere
+
+    echo multigraph powerfactor
+    echo graph_title Wattmeter power factor
+    echo graph_args --base 1000 --lower-limit 0 --upper-limit 1
+    echo graph_category sensors
+    echo graph_period minute
+
+    echo wattmeter.label wattmeter
+    echo wattmeter.info power-factor
+fi
+
+# munin read values
+if [ -z "$1" ]; then
+    csvline=`tail -n 2 $logfile | sed '$d'`
+    datetime=`echo $csvline | cut -d, -f1`
+
+    unixtime=`date -d $datetime +%s`
+    now=`date +%s`
+    timediff=`expr $now - $unixtime`
+    if [ $timediff -gt 300 ]; then
+        exit 1
+    fi
+
+    temperature=`echo $csvline | cut -d, -f2`
+    pressure=`echo $csvline | cut -d, -f3`
+    humidity=`echo $csvline | cut -d, -f4`
+    v=`echo $csvline | cut -d, -f5`
+    a=`echo $csvline | cut -d, -f6`
+    w=`echo $csvline | cut -d, -f7`
+    va=`echo $csvline | cut -d, -f8`
+    pf=`echo $csvline | cut -d, -f9`
+
+    echo multigraph temperature
+    echo bme280.value $temperature
+
+    echo multigraph humidity
+    echo bme280.value $humidity
+
+    echo multigraph pressure
+    echo bme280.value $pressure
+
+    echo multigraph volt
+    echo wattmeter.value $v
+
+    echo multigraph ampere
+    echo wattmeter.value $a
+
+    echo multigraph watt
+    echo wattmeter.value $w
+
+    echo multigraph voltampere
+    echo wattmeter.value $va
+
+    echo multigraph powerfactor
+    echo wattmeter.value $pf
+fi
