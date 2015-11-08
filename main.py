@@ -7,7 +7,7 @@ import json
 import wattmeter
 import bme280
 
-CONFIG_FILE = 'config.json'
+CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
 
 if __name__ == '__main__':
     f = open(CONFIG_FILE, 'r')
